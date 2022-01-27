@@ -1,48 +1,46 @@
 import request from '@/utils/request'
 
-const userApi = {
-  Login: '/auth/login',
-  Logout: '/auth/logout',
-  ForgePassword: '/auth/forge-password',
-  Register: '/auth/register',
-  twoStepCode: '/auth/2step-code',
-  SendSms: '/account/sms',
-  SendSmsErr: '/account/sms_err',
-  // get my info
-  UserInfo: '/user/info',
-  UserMenu: '/user/nav'
+const credentialApi = {
+  Login: '/credential/login',
+  Logout: '/credential/logout',
+  UserInfo: '/credential/info',
+  UserMenu: '/credential/nav'
 }
 
 /**
- * login func
- * parameter: {
- *     username: '',
- *     password: '',
- *     remember_me: true,
- *     captcha: '12345'
- * }
- * @param parameter
+ * 登录
+ * @param parameter 参数
  * @returns {*}
  */
 export function login (parameter) {
   return request({
-    url: userApi.Login,
+    url: credentialApi.Login,
     method: 'post',
     data: parameter
   })
 }
 
-export function getSmsCaptcha (parameter) {
+/**
+ * 登出
+ * @returns {*}
+ */
+export function logout () {
   return request({
-    url: userApi.SendSms,
+    url: credentialApi.Logout,
     method: 'post',
-    data: parameter
+    headers: {
+      'Content-Type': 'application/json;charset=UTF-8'
+    }
   })
 }
 
+/**
+ * 获取当前登录的用户信息
+ * @returns {*}
+ */
 export function getInfo () {
   return request({
-    url: userApi.UserInfo,
+    url: credentialApi.UserInfo,
     method: 'get',
     headers: {
       'Content-Type': 'application/json;charset=UTF-8'
@@ -50,31 +48,13 @@ export function getInfo () {
   })
 }
 
+/**
+ * 获取当前登录用户的菜单
+ * @returns {*}
+ */
 export function getCurrentUserNav () {
   return request({
-    url: userApi.UserMenu,
+    url: credentialApi.UserMenu,
     method: 'get'
-  })
-}
-
-export function logout () {
-  return request({
-    url: userApi.Logout,
-    method: 'post',
-    headers: {
-      'Content-Type': 'application/json;charset=UTF-8'
-    }
-  })
-}
-
-/**
- * get user 2step code open?
- * @param parameter {*}
- */
-export function get2step (parameter) {
-  return request({
-    url: userApi.twoStepCode,
-    method: 'post',
-    data: parameter
   })
 }

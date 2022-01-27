@@ -40,7 +40,7 @@
 
     </a-row>
 
-    <avatar-modal ref="modal" @ok="setavatar"/>
+    <avatar-modal ref="modal" @ok="setAvatar"/>
 
   </div>
 </template>
@@ -76,7 +76,7 @@ export default {
     }
   },
   methods: {
-    setavatar (url) {
+    setAvatar (url) {
       this.option.img = url
     }
   }
