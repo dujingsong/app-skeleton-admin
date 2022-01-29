@@ -3,20 +3,20 @@
     <template v-slot:content>
       <div class="page-header-content">
         <div class="avatar">
-          <a-avatar size="large" :src="currentUser.avatar" />
+          <a-avatar size="large" :src="avatar" />
         </div>
         <div class="content">
           <div class="content-title">
             {{ timeFix }}，{{ user.name }}<span class="welcome-text">，{{ welcome }}</span>
           </div>
-          <div>海纳百川，有容乃大</div>
+          <div>{{ user.profile }}</div>
         </div>
       </div>
     </template>
     <template v-slot:extraContent>
       <div class="extra-content custom-extra-content">
         <p>上次登录</p>
-        <p>2022-01-27 10:28</p>
+        <p>{{ user.lastLoginTime ? $moment(user.lastLoginTime).format('yyyy-MM-DD HH:mm:ss') : '' }}</p>
       </div>
     </template>
 
@@ -69,19 +69,13 @@ export default {
       nickname: state => state.user.nickname,
       welcome: state => state.user.welcome
     }),
-    currentUser () {
-      return {
-        name: 'Serati Ma',
-        avatar: 'https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png'
-      }
-    },
     userInfo () {
       return this.$store.getters.userInfo
     }
   },
   created () {
     this.user = this.userInfo
-    this.avatar = this.userInfo.avatar
+    this.avatar = this.$appProp.fileStorePath + this.$appProp.avatarPath + this.userInfo.avatar
   },
   mounted () {
     this.getActivity()

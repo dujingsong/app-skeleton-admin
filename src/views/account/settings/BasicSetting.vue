@@ -3,29 +3,48 @@
     <a-row :gutter="16" type="flex" justify="center">
       <a-col :order="isMobile ? 2 : 1" :md="24" :lg="16">
 
-        <a-form layout="vertical">
-          <a-form-item
+        <a-form-model
+          layout="vertical"
+          ref="form"
+          :model="form"
+          :rules="rules"
+          :label-col="labelCol"
+          :wrapper-col="wrapperCol"
+        >
+          <a-form-model-item
             :label="$t('account.settings.basic.nickname')"
+            prop="name"
           >
-            <a-input :placeholder="$t('account.settings.basic.nickname-message')" />
-          </a-form-item>
-          <a-form-item
+            <a-input
+              :placeholder="$t('account.settings.basic.nickname-message')"
+              v-model="form.name"
+            />
+          </a-form-model-item>
+          <a-form-model-item
             :label="$t('account.settings.basic.profile')"
+            prop="profile"
           >
-            <a-textarea rows="4" :placeholder="$t('account.settings.basic.profile-message')"/>
-          </a-form-item>
+            <a-textarea
+              rows="4"
+              :placeholder="$t('account.settings.basic.profile-message')"
+              v-model="form.profile"
+            />
+          </a-form-model-item>
 
-          <a-form-item
+          <a-form-model-item
             :label="$t('account.settings.basic.email')"
-            :required="false"
+            prop="email"
           >
-            <a-input placeholder="example@ant.design"/>
-          </a-form-item>
+            <a-input
+              :placeholder="$t('account.settings.basic.email-message')"
+              v-model="form.email"
+            />
+          </a-form-model-item>
 
-          <a-form-item>
-            <a-button type="primary">{{ $t('account.settings.basic.update') }}</a-button>
-          </a-form-item>
-        </a-form>
+          <a-form-model-item>
+            <a-button type="primary" :loading="loading" @click="handleSubmit">{{ $t('account.settings.basic.update') }}</a-button>
+          </a-form-model-item>
+        </a-form-model>
 
       </a-col>
       <a-col :order="1" :md="24" :lg="8" :style="{ minHeight: '180px' }">
@@ -48,6 +67,9 @@
 <script>
 import AvatarModal from './AvatarModal'
 import { baseMixin } from '@/store/app-mixin'
+import { mapGetters } from 'vuex'
+import { updateBasicInfo } from '@/api/user'
+import store from '@/store'
 
 export default {
   mixins: [baseMixin],
@@ -58,8 +80,10 @@ export default {
     return {
       // cropper
       preview: {},
+      labelCol: { span: 4 },
+      wrapperCol: { span: 14 },
       option: {
-        img: '/avatar2.jpg',
+        img: '',
         info: true,
         size: 1,
         outputType: 'jpeg',
@@ -72,12 +96,57 @@ export default {
         // 开启宽度和高度比例
         fixed: true,
         fixedNumber: [1, 1]
+      },
+      loading: false,
+      form: {},
+      rules: {
+        name: [
+          { required: true, message: '请输入名称', trigger: 'blur' },
+          { min: 3, max: 5, message: '名称长度为1-20个字符', trigger: 'blur' }
+        ],
+        profile: [
+          { required: true, message: '请输入个性签名', trigger: 'change' },
+          { max: 32, message: '个性签名不能超过32个字符', trigger: 'blur' }
+        ],
+        email: [
+          { required: true, message: '请输入邮箱', trigger: 'change' },
+          { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+        ]
       }
     }
   },
+  computed: {
+    ...mapGetters(['userInfo']),
+    userInfo () {
+      return this.$store.getters.userInfo
+    }
+  },
+  created () {
+    this.form = JSON.parse(JSON.stringify(this.userInfo))
+    this.option.img = this.$appProp.fileStorePath + this.$appProp.avatarPath + this.userInfo.avatar
+  },
   methods: {
     setAvatar (url) {
-      this.option.img = url
+      this.option.img = this.$appProp.fileStorePath + this.$appProp.avatarPath + url
+      store.dispatch('GetInfo')
+    },
+    handleSubmit (e) {
+      this.loading = true
+      this.$refs.form.validate(valid => {
+        if (!valid) {
+          this.loading = false
+          return false
+        }
+        updateBasicInfo(this.form).then(res => {
+          this.loading = false
+          if (res.code !== '0') {
+            this.$message.error('更新失败')
+          } else {
+            this.$message.info('更新成功')
+            store.dispatch('GetInfo')
+          }
+        })
+      })
     }
   }
 }

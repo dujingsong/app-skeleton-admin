@@ -5,20 +5,22 @@
         <a-card :bordered="false">
           <div class="account-center-avatarHolder">
             <div class="avatar">
-              <img :src="avatar">
+              <img :src="$appProp.fileStorePath + $appProp.avatarPath + userInfo.avatar">
             </div>
             <div class="username">{{ nickname }}</div>
-            <div class="bio">海纳百川，有容乃大</div>
+            <div class="bio">{{ userInfo.profile }}</div>
           </div>
           <div class="account-center-detail">
             <p>
-              <a-icon class="account-center-detail-icon" type="user" title="姓名"/> 真实姓名
+              <a-icon class="account-center-detail-icon" type="user" title="姓名"/> {{ userInfo.name }}
             </p>
             <p>
-              <a-icon class="account-center-detail-icon" type="cluster" title="角色"/> 角色1、角色2
+              <a-icon class="account-center-detail-icon" type="cluster" title="角色"/>
+              <span v-for="(item, index) in roles" :key="index">{{ index !== 0 ? '、' : '' }}{{ item.name }}</span>
             </p>
             <p>
-              <a-icon class="account-center-detail-icon" type="flag" title="上次登录" /> 2022-01-27 14:00
+              <a-icon class="account-center-detail-icon" type="flag" title="上次登录" />
+              {{ userInfo.lastLoginTime ? $moment(userInfo.lastLoginTime).format('yyyy-MM-DD HH:mm:ss') : '' }}
             </p>
           </div>
           <a-divider/>
@@ -75,7 +77,6 @@
 
 <script>
 import { PageView, RouteView } from '@/layouts'
-
 import { mapGetters } from 'vuex'
 
 export default {
@@ -91,7 +92,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['nickname', 'avatar'])
+    ...mapGetters(['nickname', 'avatar', 'userInfo', 'roles'])
   },
   mounted () {
   },

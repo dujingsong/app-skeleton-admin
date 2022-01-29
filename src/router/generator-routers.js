@@ -1,7 +1,7 @@
 // eslint-disable-next-line
 import * as loginService from '@/api/login'
 // eslint-disable-next-line
-import { BasicLayout, BlankLayout, PageView, RouteView } from '@/layouts'
+import {BasicLayout, BlankLayout, PageView, RouteView} from '@/layouts'
 
 // 前端路由表
 const constantRouterComponents = {
@@ -17,14 +17,16 @@ const constantRouterComponents = {
   Home: () => import('@/views/home/Home'),
 
   // 你需要动态引入的页面组件
-  // account
+  // 账户信息
   AccountCenter: () => import('@/views/account/center'),
   AccountSettings: () => import('@/views/account/settings/Index'),
   BasicSetting: () => import('@/views/account/settings/BasicSetting'),
   SecuritySettings: () => import('@/views/account/settings/Security'),
   CustomSettings: () => import('@/views/account/settings/Custom'),
   BindingSettings: () => import('@/views/account/settings/Binding'),
-  NotificationSettings: () => import('@/views/account/settings/Notification')
+  NotificationSettings: () => import('@/views/account/settings/Notification'),
+  // 控制面板
+  NoticeList: () => import('@/views/notice/NoticeList')
 }
 
 // 前端未找到页面路由（固定不用改）
@@ -160,6 +162,7 @@ export const generatorDynamicRouter = token => {
       .then(res => {
         const body = res.body
         let { permissions } = body
+        permissions.forEach(permission => convertPermission(permission))
         permissions = defaultNav.concat(permissions)
         const menuNav = []
         const childrenNav = []
@@ -167,16 +170,23 @@ export const generatorDynamicRouter = token => {
         listToTree(permissions, childrenNav, 0)
         rootRouter.children = childrenNav
         menuNav.push(rootRouter)
-        console.log('menuNav', menuNav)
         const routers = generator(menuNav)
         routers.push(notFoundRouter)
-        console.log('routers', routers)
         resolve(routers)
       })
       .catch(err => {
         reject(err)
       })
   })
+}
+
+const convertPermission = (permission) => {
+  permission.meta = {
+    title: permission.name,
+    icon: permission.icon,
+    show: true
+  }
+  permission.path = permission.url
 }
 
 /**
