@@ -6,19 +6,12 @@ const api = {
   service: '/service',
   permission: '/permission',
   permissionNoPager: '/permission/no-pager',
-  orgTree: '/org/tree'
+  orgTree: '/org/tree',
+  // 角色相关
+  findRole: '/role/find',
+  addRole: '/role/add',
+  editRole: '/role/edit'
 }
-
-export default api
-
-export function getUserList (parameter) {
-  return request({
-    url: api.user,
-    method: 'get',
-    params: parameter
-  })
-}
-
 export function getRoleList (parameter) {
   return request({
     url: api.role,
@@ -51,20 +44,26 @@ export function getOrgTree (parameter) {
   })
 }
 
-// id == 0 add     post
-// id != 0 update  put
-export function saveService (parameter) {
+export function findRole (parameter) {
   return request({
-    url: api.service,
-    method: parameter.id === 0 ? 'post' : 'put',
+    url: api.findRole,
+    method: 'post',
     data: parameter
   })
 }
 
-export function saveSub (sub) {
+export function addRole (parameter) {
   return request({
-    url: '/sub',
-    method: sub.id === 0 ? 'post' : 'put',
-    data: sub
+    url: api.addRole,
+    method: 'post',
+    data: parameter
+  })
+}
+
+export function editRole (parameter) {
+  return request({
+    url: api.editRole,
+    method: 'post',
+    data: parameter
   })
 }

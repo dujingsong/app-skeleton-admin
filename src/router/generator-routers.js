@@ -25,8 +25,9 @@ const constantRouterComponents = {
   CustomSettings: () => import('@/views/account/settings/Custom'),
   BindingSettings: () => import('@/views/account/settings/Binding'),
   NotificationSettings: () => import('@/views/account/settings/Notification'),
-  // 控制面板
-  NoticeList: () => import('@/views/notice/NoticeList')
+  // 系统管理
+  NoticeList: () => import('@/views/notice/NoticeList'),
+  RoleTableList: () => import('@/views/system/RoleTableList')
 }
 
 // 前端未找到页面路由（固定不用改）
