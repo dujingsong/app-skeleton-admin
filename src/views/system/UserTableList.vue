@@ -5,12 +5,12 @@
         <a-form layout="inline">
           <a-row :gutter="48">
             <a-col :md="8" :sm="24">
-              <a-form-item label="角色名称">
+              <a-form-item label="用户名称">
                 <a-input v-model="queryParam.keywords" placeholder=""/>
               </a-form-item>
             </a-col>
             <a-col :md="8" :sm="24">
-              <a-form-item label="角色状态">
+              <a-form-item label="用户状态">
                 <a-select v-model="queryParam.status" placeholder="请选择" default-value="0">
                   <a-select-option value="all">全部</a-select-option>
                   <a-select-option value="0">启用</a-select-option>
@@ -87,6 +87,8 @@
             <a @click="handleGrant(record)"><a-icon type="key" />授权</a>
             <a-divider type="vertical" />
             <a @click="handleDelete(record)" class="delete_btn"><a-icon type="delete" />删除</a>
+            <a-divider type="vertical" />
+            <a @click="resetPassword(record)">重置密码</a>
           </template>
         </span>
       </s-table>
@@ -102,19 +104,45 @@
         @ok="handleOk"
       />
       <step-by-step-modal ref="modal" @ok="handleOk"/>
-      <a-modal v-model="grantVisible" title="授权" @ok="handleGrantOk" @cancel="handleGrantCancel">
+      <a-modal
+        v-model="grantVisible"
+        width="80%"
+        title="授权"
+        @ok="handleGrantOk"
+        @cancel="handleGrantCancel">
         <a-spin :spinning="spinning">
-          <a-tree
-            v-model="checkedKeys"
+          <s-table
             v-if="grantVisible"
-            checkable
-            :auto-expand-parent="true"
-            :defaultExpandAll="true"
-            :selected-keys="selectedKeys"
-            :tree-data="treeData"
-            :replace-fields="replaceFields"
-          />
+            ref="table"
+            size="default"
+            rowKey="id"
+            :columns="roleColumns"
+            :data="loadRoleData"
+            :alert="false"
+            :rowSelection="roleRowSelection"
+            :showPagination="false"
+          >
+            <span slot="serial" slot-scope="text, record, index">
+              {{ index + 1 }}
+            </span>
+            <span slot="createTime" slot-scope="text">
+              {{ moment(text).format('YYYY-MM-DD HH:mm:ss') }}
+            </span>
+            <span slot="status" slot-scope="text">
+              <a-badge :status="text | statusTypeFilter" :text="text | statusFilter" />
+            </span>
+          </s-table>
         </a-spin>
+      </a-modal>
+      <a-modal
+        title="重置密码"
+        :visible="resetPasswordModalVisible"
+        @ok="doResetPassword"
+        @cancel="cancelResetPassword"
+      >
+        <p>
+          <a-input v-model="newPassword" placeholder="请输入新密码" />
+        </p>
       </a-modal>
     </a-card>
   </page-header-wrapper>
@@ -123,16 +151,56 @@
 <script>
 import moment from 'moment'
 import { Ellipsis, STable } from '@/components'
-import { findRole, addRole, editRole, deleteRole
-  , batchDeleteRole, batchDisableRole
-  , batchEnableRole, permissionTree
-  , getRoleGrantedPermissions, grantRolePermission } from '@/api/manage'
+import { findUser, addUser, editUser, deleteUser, resetUserPassword
+  , batchDeleteUser, batchDisableUser
+  , batchEnableUser, findRole
+  , getUserGrantedRoles, grantUserRoles } from '@/api/manage'
 
-import StepByStepModal from './modules/StepByStepModal'
-import CreateForm from './modules/CreateForm'
+import StepByStepModal from './modules/user/StepByStepModal'
+import CreateForm from './modules/user/CreateForm'
 import { checkResponse, showResponseErrMsg } from '@/utils/util'
 
 const columns = [
+  {
+    title: '#',
+    scopedSlots: { customRender: 'serial' }
+  },
+  {
+    title: '创建时间',
+    dataIndex: 'createTime',
+    scopedSlots: { customRender: 'createTime' },
+    sorter: true
+  },
+  {
+    title: '姓名',
+    dataIndex: 'name'
+  },
+  {
+    title: '用户名',
+    dataIndex: 'username'
+  },
+  {
+    title: '邮箱',
+    dataIndex: 'email'
+  },
+  {
+    title: '状态',
+    dataIndex: 'status',
+    scopedSlots: { customRender: 'status' }
+  },
+  {
+    title: '备注',
+    dataIndex: 'notes',
+    scopedSlots: { customRender: 'notes' }
+  },
+  {
+    title: '操作',
+    dataIndex: 'action',
+    scopedSlots: { customRender: 'action' }
+  }
+]
+
+const roleColumns = [
   {
     title: '#',
     scopedSlots: { customRender: 'serial' }
@@ -156,11 +224,6 @@ const columns = [
     title: '备注',
     dataIndex: 'notes',
     scopedSlots: { customRender: 'notes' }
-  },
-  {
-    title: '操作',
-    dataIndex: 'action',
-    scopedSlots: { customRender: 'action' }
   }
 ]
 
@@ -198,13 +261,14 @@ export default {
       // 查询参数
       queryParam: {},
       columns: columns,
+      roleColumns: roleColumns,
       // 加载数据方法 必须为 Promise 对象
       loadData: parameter => {
         const requestParameters = Object.assign({}, parameter, this.queryParam)
         if (requestParameters['status'] === 'all') {
           delete requestParameters['status']
         }
-        return findRole(requestParameters)
+        return findUser(requestParameters)
           .then(res => {
             const body = res['body']
             const records = body['records']
@@ -217,18 +281,29 @@ export default {
             }
           })
       },
-      selectedRowKeys: [],
-      selectedRows: [],
-      treeData: [],
-      replaceFields: {
-        children: 'children',
-        title: 'name',
-        key: 'id'
+      // 加载数据方法 必须为 Promise 对象
+      loadRoleData: parameter => {
+        const requestParameters = {}
+        return findRole(requestParameters)
+          .then(res => {
+            const records = res['body']
+            return {
+              data: records
+            }
+          })
       },
+      selectedRowKeys: [],
+      selectedRoleRowKeys: [],
+      selectedRows: [],
+      selectedRoleRows: [],
+      roleData: [],
       selectedKeys: [],
       checkedKeys: [],
-      waitGrantPermissionRole: null,
-      spinning: false
+      waitGrantRoleUser: null,
+      spinning: false,
+      resetPasswordModalVisible: false,
+      currentRecord: null,
+      newPassword: null
     }
   },
   filters: {
@@ -250,22 +325,45 @@ export default {
         selectedRowKeys: this.selectedRowKeys,
         onChange: this.onSelectChange
       }
+    },
+    roleRowSelection () {
+      return {
+        selectedRoleRowKeys: this.selectedRoleRowKeys,
+        onChange: this.onRoleSelectChange,
+        getCheckboxProps: record => ({
+          props: {
+            defaultChecked: this.roleChecked(record.id)
+          }
+        })
+      }
     }
   },
   methods: {
+    roleChecked (roleId) {
+      if (!this.selectedRoleRowKeys || !this.selectedRoleRowKeys.length) return false
+      let contains = false
+      for (let i = 0; i < this.selectedRoleRowKeys.length; i++) {
+        if (this.selectedRoleRowKeys[i] === roleId) {
+          contains = true
+          break
+        }
+      }
+      return contains
+    },
     loadPermissionTree () {
-      permissionTree({}).then(res => {
+      findRole({}).then(res => {
         if (checkResponse(res)) {
-          showResponseErrMsg(this, res, '加载权限数据失败')
+          showResponseErrMsg(res, '加载角色数据失败')
           return
         }
-        const tree = res['body']
-        this.treeData = tree || []
+        const roleData = res['body']
+        this.roleData = roleData || []
       })
     },
     handleAdd () {
       this.mdl = null
       this.visible = true
+      this.cmd = 'add'
     },
     handleEdit (record) {
       this.visible = true
@@ -285,10 +383,10 @@ export default {
           this.cmd = null
           if (values.id > 0) {
             // 修改
-            editRole(values).then(res => {
+            editUser(values).then(res => {
               this.confirmLoading = false
               if (checkResponse(res)) {
-                showResponseErrMsg(this, res, '修改失败')
+                showResponseErrMsg(res, '修改失败')
                 return
               }
               this.visible = false
@@ -301,8 +399,7 @@ export default {
             })
           } else {
             // 新增
-            values['type'] = 'PERM'
-            addRole(values).then(res => {
+            addUser(values).then(res => {
               this.confirmLoading = false
               if (checkResponse(res)) {
                 showResponseErrMsg(this, res, '新增失败')
@@ -344,6 +441,15 @@ export default {
       this.selectedRowKeys = selectedRowKeys
       this.selectedRows = selectedRows
     },
+    /**
+     * 选择列表中的数据后的回调
+     * @param selectedRowKeys 选中的数据key集合
+     * @param selectedRows 选中的数据集合
+     */
+    onRoleSelectChange (selectedRowKeys, selectedRows) {
+      this.selectedRoleRowKeys = selectedRowKeys
+      this.selectedRoleRows = selectedRows
+    },
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
@@ -353,11 +459,11 @@ export default {
         title: '确认继续？',
         content: '确认删除选中的数据？数据删除之后将不可恢复！',
         onOk () {
-          batchDeleteRole({ idSet: _this.selectedRowKeys }).then(res => {
+          batchDeleteUser({ idSet: _this.selectedRowKeys }).then(res => {
             _this.$refs.table.refresh()
             this.confirmLoading = false
             if (checkResponse(res)) {
-              showResponseErrMsg(this, res, '删除失败')
+              showResponseErrMsg(res, '删除失败')
               return
             }
             _this.$message.info('删除成功')
@@ -372,11 +478,11 @@ export default {
         title: '确认继续？',
         content: '确认启用选中的数据？',
         onOk () {
-          batchEnableRole({ idSet: _this.selectedRowKeys }).then(res => {
+          batchEnableUser({ idSet: _this.selectedRowKeys }).then(res => {
             _this.$refs.table.refresh()
             this.confirmLoading = false
             if (checkResponse(res)) {
-              showResponseErrMsg(this, res, '启用失败')
+              showResponseErrMsg(res, '启用失败')
               return
             }
             _this.$message.info('启用成功')
@@ -391,11 +497,11 @@ export default {
         title: '确认继续？',
         content: '确认禁用选中的数据？',
         onOk () {
-          batchDisableRole({ idSet: _this.selectedRowKeys }).then(res => {
+          batchDisableUser({ idSet: _this.selectedRowKeys }).then(res => {
             _this.$refs.table.refresh()
             this.confirmLoading = false
             if (checkResponse(res)) {
-              showResponseErrMsg(this, res, '禁用失败')
+              showResponseErrMsg(res, '禁用失败')
               return
             }
             _this.$message.info('禁用成功')
@@ -407,25 +513,26 @@ export default {
     handleGrant (record) {
       this.grantVisible = true
       this.spinning = true
-      getRoleGrantedPermissions({ roleId: record.id }).then(res => {
+      getUserGrantedRoles({ userId: record.id }).then(res => {
         this.spinning = false
         if (checkResponse(res)) {
-          showResponseErrMsg(this, res, '查询角色授予的权限失败')
+          showResponseErrMsg(res, '查询用户授予的角色失败')
           return
         }
-        this.checkedKeys = res['body'] || []
-        this.waitGrantPermissionRole = record
+        this.selectedRoleRowKeys = res['body'] || []
+        this.waitGrantRoleUser = record
       })
     },
     handleGrantCancel () {
       this.grantVisible = false
     },
     handleGrantOk () {
+      console.log(this.selectedRoleRowKeys)
       this.spinning = true
-      grantRolePermission({ roleId: this.waitGrantPermissionRole.id, permissionIdSet: this.checkedKeys }).then(res => {
+      grantUserRoles({ userId: this.waitGrantRoleUser.id, roleIdSet: this.selectedRoleRowKeys }).then(res => {
         this.spinning = false
         if (checkResponse(res)) {
-          showResponseErrMsg(this, res, '授权失败')
+          showResponseErrMsg(res, '授权失败')
           return
         }
         this.$message.info('授权成功')
@@ -438,7 +545,7 @@ export default {
         title: '确认继续？',
         content: '确认删除这条数据？数据删除之后将不可恢复！',
         onOk () {
-          deleteRole({ id: record.id }).then(res => {
+          deleteUser({ id: record.id }).then(res => {
             _this.$refs.table.refresh()
             this.confirmLoading = false
             if (checkResponse(res)) {
@@ -454,6 +561,30 @@ export default {
     onChange (value, dateString) {
       this.queryParam.startDateTime = new Date(dateString[0]).getTime()
       this.queryParam.endDateTime = new Date(dateString[1]).getTime()
+    },
+    resetPassword (item) {
+      this.currentRecord = item
+      this.resetPasswordModalVisible = true
+    },
+    cancelResetPassword () {
+      this.currentRecord = null
+      this.resetPasswordModalVisible = false
+    },
+    doResetPassword () {
+      const password = this.newPassword ? this.newPassword.trim() : null
+      if (!password || password.length < 6 || password.length > 32) {
+        this.$message.error('密码不能为空且长度为6~32个字符！')
+        return
+      }
+      resetUserPassword({ id: this.currentRecord.id, newPassword: password }).then(response => {
+        if (checkResponse(response)) {
+          showResponseErrMsg(this, response, '操作失败')
+        } else {
+          this.resetPasswordModalVisible = false
+          this.$message.info('重置成功')
+          this.newPassword = null
+        }
+      })
     }
   }
 }

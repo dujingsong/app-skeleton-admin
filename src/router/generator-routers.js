@@ -27,7 +27,8 @@ const constantRouterComponents = {
   NotificationSettings: () => import('@/views/account/settings/Notification'),
   // 系统管理
   NoticeList: () => import('@/views/notice/NoticeList'),
-  RoleTableList: () => import('@/views/system/RoleTableList')
+  RoleTableList: () => import('@/views/system/RoleTableList'),
+  UserTableList: () => import('@/views/system/UserTableList')
 }
 
 // 前端未找到页面路由（固定不用改）

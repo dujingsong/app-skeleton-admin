@@ -177,6 +177,9 @@ export default {
             this.loadData()
             return
           }
+          if (this.showPagination) {
+            this.localPagination['showTotal'] = (total) => { return total + ' 条' }
+          }
 
           // 这里用于判断接口是否有返回 r.totalCount 且 this.showPagination = true 且 pageNo 和 pageSize 存在 且 totalCount 小于等于 pageNo * pageSize 的大小
           // 当情况满足时，表示数据不满足分页大小，关闭 table 分页功能
@@ -280,6 +283,8 @@ export default {
     const showAlert = (typeof this.alert === 'object' && this.alert !== null && this.alert.show) && typeof this.rowSelection.selectedRowKeys !== 'undefined' || this.alert
 
     Object.keys(T.props).forEach(k => {
+      if (k === 'pagination') {
+      }
       const localKey = `local${k.substring(0, 1).toUpperCase()}${k.substring(1)}`
       if (localKeys.includes(localKey)) {
         props[k] = this[localKey]

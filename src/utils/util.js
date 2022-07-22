@@ -93,3 +93,11 @@ export function scorePassword (pass) {
 
   return parseInt(score)
 }
+
+export function checkResponse (response) {
+  return response['code'] !== '0'
+}
+
+export function showResponseErrMsg (_this, response, defaultMsg) {
+  _this.$message.error(response['msg'] || defaultMsg)
+}

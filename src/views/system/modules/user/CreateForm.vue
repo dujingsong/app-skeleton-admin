@@ -13,9 +13,21 @@
         <a-form-item label="名称">
           <a-input :readOnly="cmd && cmd === 'view'" v-decorator="['name', {rules: [{required: true, min: 2, max: 16, message: '请输入2~16个字符的名称！'}]}]" />
         </a-form-item>
+        <a-form-item label="用户名">
+          <a-input :readOnly="cmd && cmd === 'view'" v-decorator="['username', {rules: [{required: true, min: 2, max: 16, message: '请输入2~16个字符的用户名！'}]}]" />
+        </a-form-item>
+        <a-form-item label="密码" v-if="cmd && cmd === 'add'">
+          <a-input :readOnly="cmd && cmd === 'view'" v-decorator="['password', {rules: [{required: true, min: 6, max: 32, message: '请输入6~32个字符的密码！'}]}]" />
+        </a-form-item>
         <a-form-item label="状态">
           <a-select :disabled="cmd && cmd === 'view'" :options="statusOptions" v-decorator="['status', {rules: [{required: true, message: '请选择状态！'}]}]">
           </a-select>
+        </a-form-item>
+        <a-form-item label="邮箱">
+          <a-input :readOnly="cmd && cmd === 'view'" v-decorator="['email', {rules: [{required: false}]}]" />
+        </a-form-item>
+        <a-form-item label="简介">
+          <a-input :readOnly="cmd && cmd === 'view'" v-decorator="['profile', {rules: [{required: false}]}]" />
         </a-form-item>
         <a-form-item label="备注">
           <a-input :readOnly="cmd && cmd === 'view'" v-decorator="['notes', {rules: [{required: false, max: 32, message: '备注不能超出16个字符！'}]}]" />
@@ -29,7 +41,7 @@
 import pick from 'lodash.pick'
 
 // 表单字段
-const fields = ['id', 'name', 'status', 'notes']
+const fields = ['id', 'name', 'username', 'password', 'status', 'email', 'profile', 'notes']
 
 export default {
   props: {
